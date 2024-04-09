@@ -116,7 +116,8 @@ def prompt_llm(
         model=model,
         messages=messages,
         functions=functions,
-        stream=True
+        stream=True,
+        temperature=0
     )
     return stream
 
