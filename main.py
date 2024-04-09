@@ -71,6 +71,16 @@ async def chat_completion(chat: Chat, session_id: str):
     return EventSourceResponse(stream_tokens(prompt))
 
 
+@app.get("/chat_history/{session_id}")
+async def get_chat_history(session_id: str):
+
+    if session_id not in sessions:
+        raise HTTPException(status_code=404, detail=f"Invalid session id: {session_id}")
+
+    message_history = messages_db[session_id]
+    return message_history
+
+
 @app.get("/")
 async def home(username: str):
     session_id = uuid4().hex
