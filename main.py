@@ -9,11 +9,14 @@ from fastapi import FastAPI, HTTPException
 from sse_starlette.sse import EventSourceResponse
 
 # see llm.py to better understand the interaction with OpenAI's Chat Completion service.
-from llm import prompt_llm_async
+from llm import prompt_llm
 from data import Chat
 
 app = FastAPI()
 sessions = dict()
+messages_db = dict()
+
+RETRY_TIMEOUT = 5  # seconds
 
 
 @app.get("/stream-example")
@@ -38,39 +41,38 @@ async def stream_example():
     return EventSourceResponse(stream_tokens())
 
 
-@app.post("/chat")
-async def chat_completion(chat: Chat):
+@app.put("/chat/{session_id}")
+async def chat_completion(chat: Chat, session_id: str):
 
-    username = chat.username
-    session_id = chat.session_id
+    prompt = chat.payload
 
-    # create a new session if one doesn't exists
-    if not session_id:
-        session_id = uuid4().hex
-        sessions[session_id] = username
-        message = (
-            f"Welcome to the chat service {username}!. Your session id: {session_id}"
-        )
-
-    elif session_id in sessions:
-        username = sessions[session_id]
-        message = f"Hello again {username}!"
-    else:
+    # validate sesssion id
+    if session_id not in sessions:
         raise HTTPException(status_code=404, detail=f"Invalid session id: {session_id}")
 
-    return message
+    message_history = messages_db.get(session_id, [])
 
+    async def stream_tokens(prompt: str):
+        stream = prompt_llm(prompt, existing_messages=message_history)
+        current_response = ""
 
-@app.put("/chat/{session_id}")
-async def chat_continuation():
-    pass
+        for chunk in stream:
+            if len(chunk.choices) > 0:
+                token = chunk.choices[0].delta.content
+                if token and token is not None:
+                    current_response += token
+                    yield token
 
+        # save user prompt and ai response
+        message_history.append({"role": "user", "content": prompt})
+        message_history.append({"role": "assistant", "content": current_response})
+        messages_db[session_id] = message_history
 
-@app.get("/history/{session_id}")
-async def show_chat_history(session_id: int):
-    return f"Session ID: {session_id.int}"
+    return EventSourceResponse(stream_tokens(prompt))
 
 
 @app.get("/")
-async def home():
-    return "hello world!"
+async def home(username: str):
+    session_id = uuid4().hex
+    sessions[session_id] = username
+    return f"Welcome to the chat service {username}!. Your session id: {session_id}"
