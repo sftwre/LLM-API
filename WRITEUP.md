@@ -29,6 +29,8 @@ Follow this flow to utilize the API
 3. Get chat history
    `curl http://127.0.0.1:8000/chat_history/<session_id>`
 
+Alternatively, a better tool to ping the API would be [Postman](https://www.postman.com/); This is the tool I utilized during development.
+
 ## Running tests
 
 Launch the docker container in interactive mode to run the test suite. The Redis server and Uvicorn servers must be running for the tests to execute.
