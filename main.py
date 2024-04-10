@@ -14,8 +14,6 @@ from data import Chat, serialize, deserialize
 from database import get_redis_client, create_redis_key
 
 app = FastAPI()
-sessions = dict()
-messages_db = dict()
 
 RETRY_TIMEOUT = 5  # seconds
 
@@ -111,7 +109,10 @@ async def get_chat_history(
 
 
 @app.get("/")
-async def home(username: str, redis_client=Depends(get_redis_client)):
+async def home(username: str, redis_client=Depends(get_redis_client)) -> dict:
     session_id = uuid4().hex
     redis_client.set(session_id, username)
-    return f"Welcome to the chat service {username}!. Your session id: {session_id}"
+    return {
+        "message": f"Welcome to the chat service {username}!",
+        "session_id": session_id,
+    }
