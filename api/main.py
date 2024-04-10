@@ -9,9 +9,9 @@ from fastapi import FastAPI, HTTPException, Depends
 from sse_starlette.sse import EventSourceResponse
 
 # see llm.py to better understand the interaction with OpenAI's Chat Completion service.
-from llm import prompt_llm
-from data import Chat, serialize, deserialize
-from database import get_redis_client, create_redis_key
+from api.llm import prompt_llm
+from api.data import Chat, serialize, deserialize
+from api.database import get_redis_client, create_redis_key
 
 app = FastAPI()
 
