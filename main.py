@@ -14,8 +14,6 @@ from data import Chat, serialize, deserialize
 from database import get_redis_client, create_redis_key
 
 app = FastAPI()
-sessions = dict()
-messages_db = dict()
 
 RETRY_TIMEOUT = 5  # seconds
 
@@ -83,7 +81,9 @@ async def chat_completion(
 
 
 @app.get("/chat_history/{session_id}")
-async def get_chat_history(session_id: str, redis_client=Depends(get_redis_client)):
+async def get_chat_history(
+    session_id: str, redis_client=Depends(get_redis_client)
+) -> Chat:
 
     # verify sesssion id
     curr_user = redis_client.get(session_id)
@@ -99,16 +99,20 @@ async def get_chat_history(session_id: str, redis_client=Depends(get_redis_clien
     else:
         message_history = deserialize(serialized_history)
 
-    user_profile = {"username": curr_user, "session_id": session_id}
-
-    return {
-        **user_profile,
-        "messages": message_history,
-    }
+    chat = Chat(
+        payload="",
+        username=curr_user,
+        session_id=session_id,
+        message_history=message_history,
+    )
+    return chat
 
 
 @app.get("/")
-async def home(username: str, redis_client=Depends(get_redis_client)):
+async def home(username: str, redis_client=Depends(get_redis_client)) -> dict:
     session_id = uuid4().hex
     redis_client.set(session_id, username)
-    return f"Welcome to the chat service {username}!. Your session id: {session_id}"
+    return {
+        "message": f"Welcome to the chat service {username}!",
+        "session_id": session_id,
+    }
