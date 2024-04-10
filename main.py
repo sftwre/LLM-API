@@ -83,7 +83,9 @@ async def chat_completion(
 
 
 @app.get("/chat_history/{session_id}")
-async def get_chat_history(session_id: str, redis_client=Depends(get_redis_client)):
+async def get_chat_history(
+    session_id: str, redis_client=Depends(get_redis_client)
+) -> Chat:
 
     # verify sesssion id
     curr_user = redis_client.get(session_id)
@@ -99,12 +101,13 @@ async def get_chat_history(session_id: str, redis_client=Depends(get_redis_clien
     else:
         message_history = deserialize(serialized_history)
 
-    user_profile = {"username": curr_user, "session_id": session_id}
-
-    return {
-        **user_profile,
-        "messages": message_history,
-    }
+    chat = Chat(
+        payload="",
+        username=curr_user,
+        session_id=session_id,
+        message_history=message_history,
+    )
+    return chat
 
 
 @app.get("/")

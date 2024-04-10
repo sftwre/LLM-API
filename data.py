@@ -5,6 +5,9 @@ from pydantic import BaseModel
 
 class Chat(BaseModel):
     payload: str
+    session_id: str | None = None
+    username: str | None = None
+    message_history: List[Dict] | None = None
 
 
 def serialize(message_history: List[Dict]) -> str:
