@@ -43,7 +43,16 @@ async def stream_example():
 @app.put("/chat/{session_id}")
 async def chat_completion(
     chat: Chat, session_id: str, redis_client=Depends(get_redis_client)
-):
+) -> EventSourceResponse:
+    """
+    This route provides the core chat functionality for the API and allows clients to prompt
+    an LLM. Both client prompts and AI responses are stored in a Redis cache, they're retreived for context before pinging the OpenAI API.
+
+    :param chat (Chat): Prompt from client
+    :param session_id (str): Session id issued by API
+    :param redis_client: redis cache
+    :returns: Returns Server Sent Event that streams result tokens from the OpenAI API.
+    """
 
     prompt = chat.payload
     redis_key = create_redis_key("chat_history", session_id)
@@ -66,6 +75,7 @@ async def chat_completion(
         current_response = ""
 
         for chunk in stream:
+            # skip empty chunks
             if len(chunk.choices) > 0:
                 token = chunk.choices[0].delta.content
                 if token and token is not None:
@@ -84,6 +94,13 @@ async def chat_completion(
 async def get_chat_history(
     session_id: str, redis_client=Depends(get_redis_client)
 ) -> Chat:
+    """
+    This route is used to pull the chat history for any existing chat session.
+
+    :param session_id (str): Session id for a chat between client and OpenAI
+    :param redis_client: redis cache
+    :returns: A chat with the retrieved user profile and message history included.
+    """
 
     # verify sesssion id
     curr_user = redis_client.get(session_id)
@@ -110,6 +127,14 @@ async def get_chat_history(
 
 @app.get("/")
 async def home(username: str, redis_client=Depends(get_redis_client)) -> dict:
+    """
+    Default API route that issues new clients a Session ID. This is the entrypoint to the API and must be called
+    before initiaing a chat.
+
+    :param username (str): username provided by client
+    :param redis_client: redis cache
+    :returns: Returns dictionary with issued session id a welcome message.
+    """
     session_id = uuid4().hex
     redis_client.set(session_id, username)
     return {
