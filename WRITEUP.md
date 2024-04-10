@@ -11,7 +11,7 @@ The API has three main routes
 ## Launching service
 
 To launch the service
-1. Create a `.env` file in the project's root directory and add your OPENAI_API_KEY
+1. Create a `.env` file in the project's default directory and add your OPENAI_API_KEY
    `vim .env`,
    `OPENAI_API_KEY=<key>`
 2. Build the docker image using the following command in the default directory.
