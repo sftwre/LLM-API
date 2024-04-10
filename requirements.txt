@@ -19,3 +19,6 @@ starlette==0.27.0
 tqdm==4.66.1
 typing_extensions==4.8.0
 uvicorn==0.24.0.post1
+python-dotenv==1.0.1
+redis
+pytest
