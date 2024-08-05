@@ -18,28 +18,6 @@ app = FastAPI()
 RETRY_TIMEOUT = 5  # seconds
 
 
-@app.get("/stream-example")
-async def stream_example():
-    """
-    Example route for streaming text to the client, one word/token at a time.
-    """
-
-    async def stream_tokens():
-        """
-        Placeholder implementation for token streaming. Try running this route as-is to better understand how to
-        stream data using Server-Sent Events (SSEs) in FastAPI.
-        See this tutorial for more information: https://devdojo.com/bobbyiliev/how-to-use-server-sent-events-sse-with-fastapi
-        """
-        for token in ["hello", ", ", "this ", "is ", "a ", "streamed ", "response."]:
-            # fake delay:
-            await asyncio.sleep(random.randint(0, 3))
-
-            print(f"Yielding token: {token}")
-            yield token
-
-    return EventSourceResponse(stream_tokens())
-
-
 @app.put("/chat/{session_id}")
 async def chat_completion(
     chat: Chat, session_id: str, redis_client=Depends(get_redis_client)
